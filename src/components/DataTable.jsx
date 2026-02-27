@@ -118,7 +118,7 @@ export default function DataTable({ dataIdx, collapseState, onToggle, dark }) {
         <thead className="sticky top-0 z-50">
 
           {/* Row 1 – months */}
-          <tr>
+          {/* <tr>
             <th rowSpan={3} className={`sticky left-0 z-[60] min-w-[215px] max-w-[215px] ${bgH} border-b border-r ${brd} text-left px-2.5 py-1.5 text-[16px] font-semibold tracking-widest ${txtMuted}`}>INDICATEUR</th>
             <th rowSpan={3} className={`sticky left-[215px] z-[60] min-w-[110px] max-w-[110px] ${bgH} border-b border-r-2 ${brdS} text-center px-2.5 py-1.5 text-[16px] font-semibold tracking-wider ${txtMuted}`}>CODE</th>
             <th rowSpan={3} className={`sticky left-[325px] z-[60] min-w-[58px] ${bgH} border-b border-r ${brdS} text-center px-2 py-1.5 text-[16px] font-semibold text-amber-600`}>MIN</th>
@@ -138,7 +138,7 @@ export default function DataTable({ dataIdx, collapseState, onToggle, dark }) {
                 </th>
               );
             })}
-          </tr>
+          </tr> */}
 
           {/* Row 2 – weeks */}
           <tr>
