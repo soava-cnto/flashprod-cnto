@@ -100,8 +100,8 @@ export function getChipClass(value, row, dark) {
     else chip = "red";
   } else if (colorMode === "min") {
     if (value >= refMin) chip = "green";
-    else if (value >= refMin - 0.05) chip = "red";
-    else chip = "orange";
+    else if (value >= refMin - 0.05) chip = "orange";
+    else chip = "red";
   } else if (colorMode === "max_inv") {
     if (value <= refMax) chip = "green";
     else if (value <= refMax + 0.05) chip = "red";
