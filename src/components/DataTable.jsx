@@ -42,18 +42,24 @@ function CellValue({ value, row, dark }) {
 // ─── main ─────────────────────────────────────
 
 export default function DataTable({ dataIdx, collapseState, onToggle, dark }) {
-  const { dateIndex, dateMois, sortedDates, sortedMonths, monthWeekDay, allFiles, allRd } = dataIdx;
+  const { dateIndex, dateWeek, sortedDates, allFiles, allRd } = dataIdx;
   const rows = buildRows(allFiles, allRd);
 
+  // build flat week->dates mapping (weeks run Mon-Sun, label like "sem-40")
+  const weekDay = {};
+  sortedDates.forEach((dt) => {
+    const w = dateWeek[dt];
+    if (!weekDay[w]) weekDay[w] = [];
+    weekDay[w].push(dt);
+  });
+  // preserve original date order for week sorting
+  const sortedWeeks = [...new Set(sortedDates.map((d) => dateWeek[d]))];
   const countCols = () => {
     let n = 0;
-    sortedMonths.forEach((m) => {
-      if (collapseState["m:" + m]) { n += 1; return; }
-      Object.keys(monthWeekDay[m]).forEach((w) => {
-        if (!collapseState["w:" + m + ":" + w]) n += monthWeekDay[m][w].length;
-        n += 1;
-      });
-      n += 1;
+    sortedWeeks.forEach((w) => {
+      if (collapseState["w:" + w]) { n += 1; return; }
+      n += weekDay[w].length; // one column per day
+      n += 1; // plus weekly total
     });
     return n;
   };
@@ -67,45 +73,31 @@ export default function DataTable({ dataIdx, collapseState, onToggle, dark }) {
   const txt = dark ? "text-slate-200" : "text-slate-800";
   const hov = dark ? "hover:bg-[#1f2d45]" : "hover:bg-blue-50";
   const wkBg = dark ? "bg-[#1a2035]" : "bg-[#f0f4ff]";
-  const moBg = dark ? "bg-[#1c2d50]" : "bg-blue-100";
 
   const renderCell = (value, row) => <CellValue value={value} row={row} dark={dark} />;
 
   const dataCols = (row) =>
-    sortedMonths.map((m) => {
-      const mDates = sortedDates.filter((dt) => dateMois[dt] === m);
-      const mAgg = buildAgg(mDates, dateIndex);
-      const mVal = row.formula(mAgg);
+    sortedWeeks.map((w) => {
+      const wDates = weekDay[w].slice().sort((a, b) => parseDate(a) - parseDate(b));
+      const wAgg = buildAgg(wDates, dateIndex);
+      const wVal = row.formula(wAgg);
 
-      if (collapseState["m:" + m]) {
+      if (collapseState["w:" + w]) {
         return (
-          <td key={m} className={`px-2 py-1.5 text-center border-b border-r-[3px] border-blue-500 text-[12px] font-bold min-w-[72px] ${moBg}`}>
-            {renderCell(mVal, row)}
+          <td key={w} className={`px-2 py-1.5 text-center border-b border-r-[3px] border-blue-500 text-[12px] font-bold min-w-[72px] ${wkBg}`}>
+            {renderCell(wVal, row)}
           </td>
         );
       }
 
-      const wks = Object.keys(monthWeekDay[m]).sort();
       return [
-        ...wks.map((w) => {
-          const wDates = monthWeekDay[m][w].slice().sort((a, b) => parseDate(a) - parseDate(b));
-          const wAgg = buildAgg(wDates, dateIndex);
-          const wVal = row.formula(wAgg);
-          return [
-            ...(!collapseState["w:" + m + ":" + w]
-              ? wDates.map((dt) => (
-                  <td key={dt} className={`px-2 py-1.5 text-center border-b border-r ${brd} text-[12px] min-w-[72px] ${row.type === "kpi" ? "font-semibold" : "font-normal"}`}>
-                    {renderCell(row.formula(dateIndex[dt] || {}), row)}
-                  </td>
-                ))
-              : []),
-            <td key={w + "-wt"} className={`px-2 py-1.5 text-center border-b border-l border-r-2 ${brdS} text-[12px] font-bold min-w-[72px] ${wkBg}`}>
-              {renderCell(wVal, row)}
-            </td>,
-          ];
-        }),
-        <td key={m + "-mt"} className={`px-2 py-1.5 text-center border-b border-r-[3px] border-blue-500 text-[12px] font-bold min-w-[72px] ${moBg}`}>
-          {renderCell(mVal, row)}
+        ...wDates.map((dt) => (
+          <td key={dt} className={`px-2 py-1.5 text-center border-b border-r ${brd} text-[12px] min-w-[72px] ${row.type === "kpi" ? "font-semibold" : "font-normal"}`}>
+            {renderCell(row.formula(dateIndex[dt] || {}), row)}
+          </td>
+        )),
+        <td key={w + "-wt"} className={`px-2 py-1.5 text-center border-b border-l border-r-2 ${brdS} text-[12px] font-bold min-w-[72px] ${wkBg}`}>
+          {renderCell(wVal, row)}
         </td>,
       ];
     });
@@ -117,82 +109,52 @@ export default function DataTable({ dataIdx, collapseState, onToggle, dark }) {
         {/* ── THEAD ── */}
         <thead className="sticky top-0 z-50">
 
-          {/* Row 1 – months */}
-          {/* <tr>
-            <th rowSpan={3} className={`sticky left-0 z-[60] min-w-[215px] max-w-[215px] ${bgH} border-b border-r ${brd} text-left px-2.5 py-1.5 text-[16px] font-semibold tracking-widest ${txtMuted}`}>INDICATEUR</th>
-            <th rowSpan={3} className={`sticky left-[215px] z-[60] min-w-[110px] max-w-[110px] ${bgH} border-b border-r-2 ${brdS} text-center px-2.5 py-1.5 text-[16px] font-semibold tracking-wider ${txtMuted}`}>CODE</th>
-            <th rowSpan={3} className={`sticky left-[325px] z-[60] min-w-[58px] ${bgH} border-b border-r ${brdS} text-center px-2 py-1.5 text-[16px] font-semibold text-amber-600`}>MIN</th>
-            <th rowSpan={3} className={`sticky left-[383px] z-[60] min-w-[58px] ${bgH} border-b border-r-[3px] ${brdS} text-center px-2 py-1.5 text-[16px] font-semibold text-green-600`}>MAX</th>
-            {sortedMonths.map((m) => {
-              const wks = Object.keys(monthWeekDay[m]).sort();
-              let span = 1;
-              if (!collapseState["m:" + m]) {
-                wks.forEach((w) => { if (!collapseState["w:" + m + ":" + w]) span += monthWeekDay[m][w].length; span += 1; });
-              }
+          {/* Row 1 – weeks */}
+          <tr>
+            <th rowSpan={2} className={`sticky left-0 z-[60] min-w-[215px] max-w-[215px] ${bgH} border-b border-r ${brd} text-left px-2.5 py-1.5 text-[16px] font-semibold tracking-widest ${txtMuted}`}>INDICATEUR</th>
+            <th rowSpan={2} className={`sticky left-[215px] z-[60] min-w-[110px] max-w-[110px] ${bgH} border-b border-r-2 ${brdS} text-center px-2.5 py-1.5 text-[16px] font-semibold tracking-wider ${txtMuted}`}>CODE</th>
+            <th rowSpan={2} className={`sticky left-[325px] z-[60] min-w-[58px] ${bgH} border-b border-r ${brdS} text-center px-2 py-1.5 text-[16px] font-semibold text-amber-600`}>MIN</th>
+            <th rowSpan={2} className={`sticky left-[383px] z-[60] min-w-[58px] ${bgH} border-b border-r-[3px] ${brdS} text-center px-2 py-1.5 text-[16px] font-semibold text-green-600`}>MAX</th>
+            {sortedWeeks.map((w) => {
+              const dc = collapseState["w:" + w] ? 1 : weekDay[w].length + 1;
               return (
-                <th key={m} colSpan={span} className="bg-[#00afa9] text-white text-[11px] font-bold border-b border-r border-[#096475] px-2 py-1">
+                <th key={w} colSpan={dc} className={`${bgH} ${brd} border-b border-r text-[12px] font-semibold ${txt} px-2 py-1`}>
                   <div className="flex items-center justify-center gap-1.5">
-                    <ToggleBtn collapsed={!!collapseState["m:" + m]} onClick={() => onToggle("m:" + m)} dark={true} />
-                    {formatMonth(m)}
+                    <ToggleBtn collapsed={!!collapseState["w:" + w]} onClick={() => onToggle("w:" + w)} dark={dark} />
+                    {w}
                   </div>
                 </th>
               );
             })}
-          </tr> */}
+          </tr>
 
-          {/* Row 2 – weeks */}
+          {/* Row 2 – days */}
           <tr>
-            {sortedMonths.map((m) => {
-              if (collapseState["m:" + m]) {
+            {sortedWeeks.map((w) => {
+              if (collapseState["w:" + w]) {
                 return (
-                  <th key={m} rowSpan={2} className={`min-w-[72px] ${moBg} border-b border-r-[3px] border-blue-500 text-[10px] font-bold text-blue-600 px-2 py-1`}>
-                    <div className="flex flex-col items-center gap-0.5"><span className="font-bold">Total</span><span className="font-normal">{formatMonth(m)}</span></div>
+                  <th key={w} rowSpan={1} className={`min-w-[72px] ${wkBg} border-b border-r-[3px] border-blue-500 text-[10px] font-bold text-blue-600 px-2 py-1`}>
+                    <div className="flex flex-col items-center gap-0.5"><span className="font-bold">Total</span><span className="font-normal">{w}</span></div>
                   </th>
                 );
               }
-              const wks = Object.keys(monthWeekDay[m]).sort();
+              const wDates = weekDay[w].slice().sort((a,b)=> parseDate(a)-parseDate(b));
               return [
-                ...wks.map((w) => {
-                  const dc = collapseState["w:" + m + ":" + w] ? 0 : monthWeekDay[m][w].length;
-                  return (
-                    <th key={w} colSpan={dc + 1} className={`${bgH} ${brd} border-b border-r text-[12px] font-semibold ${txt} px-2 py-1`}>
-                      <div className="flex items-center justify-center gap-1.5">
-                        <ToggleBtn collapsed={!!collapseState["w:" + m + ":" + w]} onClick={() => onToggle("w:" + m + ":" + w)} dark={dark} />
-                        {w}
-                      </div>
-                    </th>
-                  );
-                }),
-                <th key={m + "-total"} rowSpan={2} className={`min-w-[72px] ${moBg} border-b border-r-[3px] border-blue-500 text-[10px] font-bold text-blue-600 px-2 py-1`}>
-                  <div className="flex flex-col items-center gap-0.5"><span className="font-bold">Total</span><span className="font-normal">{formatMonth(m)}</span></div>
-                </th>,
-              ];
-            })}
-          </tr>
-
-          {/* Row 3 – days */}
-          <tr>
-            {sortedMonths.map((m) => {
-              if (collapseState["m:" + m]) return null;
-              const wks = Object.keys(monthWeekDay[m]).sort();
-              return wks.map((w) => [
-                ...(!collapseState["w:" + m + ":" + w]
-                  ? monthWeekDay[m][w].slice().sort((a, b) => parseDate(a) - parseDate(b)).map((d) => (
-                    <th key={d} className={`${bgH} ${brd} border-b border-r text-center px-2 py-1 min-w-[72px]`}>
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className={`text-[12px] font-semibold ${txt}`}>{getDayLabel(d)}</span>
-                        <span className={`text-[9px] font-normal ${txtMuted}`}>{shortDate(d)}</span>
-                      </div>
-                    </th>
-                  ))
-                  : []),
+                ...wDates.map((d)=> (
+                  <th key={d} className={`${bgH} ${brd} border-b border-r text-center px-2 py-1 min-w-[72px]`}>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className={`text-[12px] font-semibold ${txt}`}>{getDayLabel(d)}</span>
+                      <span className={`text-[9px] font-normal ${txtMuted}`}>{shortDate(d)}</span>
+                    </div>
+                  </th>
+                )),
                 <th key={w + "-wt"} className={`min-w-[72px] ${wkBg} border-b border-l border-r-2 ${brdS} text-center px-2 py-1`}>
                   <div className="flex flex-col items-center gap-0">
                     <span className={`text-[9px] font-bold ${txt}`}>Tot.</span>
                     <span className={`text-[9px] font-normal ${txtMuted}`}>{w}</span>
                   </div>
                 </th>,
-              ]);
+              ];
             })}
           </tr>
         </thead>
@@ -245,3 +207,4 @@ export default function DataTable({ dataIdx, collapseState, onToggle, dark }) {
     </div>
   );
 }
+ 
