@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.15.0",
     "@vercel/blob": "^2.3.0",
     "lucide-react": "^0.575.0",
     "react": "^19.0.0",

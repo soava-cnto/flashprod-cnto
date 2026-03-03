@@ -21,6 +21,14 @@ npm run dev
 ### Variables d'environnement
 Le projet utilise un jeton privé pour accéder au blob Vercel (variable
 `BLOB_READ_WRITE_TOKEN`).
+Il est également protégé par Auth0 ; vous devez définir les deux variables
+suivantes pour l'authentification (voir `docs/AUTH0_SETUP.md` pour le
+pas‑à‑pas complet) :
+
+```
+VITE_AUTH0_DOMAIN=...
+VITE_AUTH0_CLIENT_ID=...
+```
 
 1. Copiez l'exemple fourni :
    ```bash

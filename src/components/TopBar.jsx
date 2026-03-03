@@ -1,20 +1,24 @@
 import { useRef } from "react";
-import { Sun, Moon, Upload } from 'lucide-react';
+import { useAuth0 } from "@auth0/auth0-react";
+import { Sun, Moon, Upload, Power, CircleUserRound } from 'lucide-react';
 import logo from "../assets/logo.png";
 
 export default function TopBar({ dark, onToggleTheme, allGroups, selectedGroup, onGroupChange, statusMsg, onFileLoad }) {
   const fileRef = useRef();
-  const bg2    = dark ? "bg-[#161b22]" : "bg-white";
+  const bg2 = dark ? "bg-[#161b22]" : "bg-white";
   const border = dark ? "border-[#30363d]" : "border-slate-200";
-  const text   = dark ? "text-slate-200" : "text-slate-800";
-  const muted  = dark ? "text-slate-500" : "text-slate-400";
+  const text = dark ? "text-slate-200" : "text-slate-800";
+  const muted = dark ? "text-slate-500" : "text-slate-400";
+
+  // authentication info
+  const { isAuthenticated, user, logout } = useAuth0();
 
   return (
     <div className={`h-14 ${bg2} border-b-2 ${border} flex items-center px-5 gap-3.5 flex-shrink-0 z-[100] shadow-sm`}>
       <div className="w-[110px] h-[34px] rounded-[9px] mt-2 flex items-center justify-center overflow-hidden flex-shrink-0 select-none">
-        <img 
-          src={logo} 
-          alt="Logo" 
+        <img
+          src={logo}
+          alt="Logo"
           className="w-full h-full object-cover"
         />
       </div>
@@ -31,6 +35,12 @@ export default function TopBar({ dark, onToggleTheme, allGroups, selectedGroup, 
       </select>
       <span className={`text-[11px] font-normal ${muted}`}>{statusMsg}</span>
       <div className="ml-auto flex items-center gap-2">
+        {isAuthenticated && (
+          <div className={`text-[12px] ${muted} mr-4`}>
+            <CircleUserRound className="inline mr-1" size={22} />
+            {user.email}
+          </div>
+        )}
         <button
           onClick={onToggleTheme}
           className={`w-9 h-9 rounded-lg border cursor-pointer flex items-center justify-center text-[16px] transition-all ${dark ? "bg-[#21262d] border-[#096475] hover:border-[#096475] hover:bg-[#00afa9]" : "bg-slate-100 border-[#cce1e1] hover:border-[#096475] hover:bg-[#00afa9]"}`}
@@ -45,6 +55,14 @@ export default function TopBar({ dark, onToggleTheme, allGroups, selectedGroup, 
           Charger CSV
         </button>
         <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={(e) => { onFileLoad(e.target.files[0]); e.target.value = ""; }} />
+        {isAuthenticated && (
+          <button
+            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+            className={`w-9 h-9 rounded-lg border cursor-pointer flex items-center justify-center text-[16px] transition-all ${dark ? "bg-[#21262d] border-[#096475] hover:border-[#096475] hover:bg-[#00afa9]" : "bg-slate-100 border-[#cce1e1] hover:border-[#096475] hover:bg-[#00afa9]"}`}
+          >
+            {dark ? <Power className="text-white" size={18} strokeWidth={2.5} /> : <Power className="text-gray" size={18} strokeWidth={2.5} />}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -9,6 +9,16 @@ export default async function handler(req, res) {
   // Cette fonction s'exécute sur les serveurs de Vercel, pas dans le navigateur.
   // Elle peut donc utiliser ton jeton privé "BLOB_READ_WRITE_TOKEN" (stocké
   // dans une variable d'environnement et **jamais** exposé au client).
+
+  // ---- simple contrôle Auth0 -------------------------------------------
+  const auth = req.headers.authorization || '';
+  if (!auth.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+  }
+  // NOTE : ici on ne valide pas le JWT (pas de bibliothèque ajoutée) mais
+  // on s'assure qu'un token a bien été envoyé. Pour une vérification complète
+  // utilisez `jsonwebtoken` + JWKS ou `@auth0/nextjs-auth0`.
+
   if (!BLOB_READ_WRITE_TOKEN) {
     return res
       .status(500)

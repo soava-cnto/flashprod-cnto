@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import TopBar from "./components/TopBar";
 import EmptyState from "./components/EmptyState";
 import DataTable from "./components/DataTable";
@@ -16,6 +17,7 @@ export default function App() {
   const [dataIdx, setDataIdx] = useState(null);
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState("Aucun fichier chargé");
+  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
 
   const handleToggle = useCallback((key) => {
     setCollapseState((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -30,6 +32,14 @@ export default function App() {
 const handleAutoLoad = useCallback(async () => {
   setLoading(true);
   try {
+    // access token pour l'API sécurisée
+    let token = null;
+    try {
+      token = await getAccessTokenSilently();
+    } catch (e) {
+      console.warn('Impossible de récupérer le token Auth0 :', e.message);
+    }
+
     // On priorise l'URL publique si elle existe et est accessible.
     // Cependant une URL de blob privée (avec `private.blob.vercel-storage.com`)
     // renvoie 403 dans le navigateur ; dans ce cas on retombe automatiquement
@@ -42,10 +52,14 @@ const handleAutoLoad = useCallback(async () => {
           'VITE_BLOB_URL a renvoyé 403 (probablement un blob privé). ' +
             'Utilisation de /api/get-csv à la place.'
         );
-        response = await fetch('/api/get-csv');
+        response = await fetch('/api/get-csv', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
       }
     } else {
-      response = await fetch('/api/get-csv');
+      response = await fetch('/api/get-csv', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
     }
 
     if (!response.ok) {
@@ -77,10 +91,12 @@ const handleAutoLoad = useCallback(async () => {
   }
 }, []);
 
-// Appeler la fonction au chargement de la page
+// Appeler la fonction au chargement de la page (une fois authentifié)
 useEffect(() => {
-  handleAutoLoad();
-}, [handleAutoLoad]);
+  if (isAuthenticated) {
+    handleAutoLoad();
+  }
+}, [handleAutoLoad, isAuthenticated]);
 
   const handleFileLoad = useCallback((file) => {
     if (!file) return;
