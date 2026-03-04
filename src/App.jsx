@@ -18,8 +18,20 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState("Aucun fichier chargé");
   const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
-  const allowedGroups = user?.['https://flashprod.example/allowed_groups'] || [];
+  const allowedGroups = user?.['https://flashprod.example/groups'] || [];
   const isAdmin = user?.['https://flashprod.example/is_admin'] === true;
+
+  // DIAGNOSTIC : affiche dans la console tout ce que Auth0 renvoie
+  useEffect(() => {
+    if (user) {
+      console.log('=== DIAG AUTH0 ===');
+      console.log('Utilisateur:', user.email);
+      console.log('Token claims complet:', user);
+      console.log('allowedGroups lu:', allowedGroups);
+      console.log('isAdmin lu:', isAdmin);
+      console.log('====================');
+    }
+  }, [user, allowedGroups, isAdmin]);
 
   const handleToggle = useCallback((key) => {
     setCollapseState((prev) => ({ ...prev, [key]: !prev[key] }));

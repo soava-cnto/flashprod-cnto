@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     try {
       const token = auth.split(' ')[1];
       const decoded = jwt.decode(token) || {};
-      allowedGroups = decoded['https://flashprod.example/allowed_groups'] || [];
+      allowedGroups = decoded['https://flashprod.example/groups'] || [];
       isAdmin = decoded['https://flashprod.example/is_admin'] === true;
     } catch (e) {
       console.warn('Impossible de décoder le JWT :', e.message);
