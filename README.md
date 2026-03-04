@@ -21,6 +21,17 @@ npm run dev
 ### Variables d'environnement
 Le projet utilise un jeton privé pour accéder au blob Vercel (variable
 `BLOB_READ_WRITE_TOKEN`).
+
+Ce tableau de bord applique également un **contrôle d'accès par activité** : 
+chaque compte Auth0 se voit attribuer un ou plusieurs groupes (ex : `popo`).
+
+- Les utilisateurs « normaux » ne peuvent consulter que les lignes CSV
+dont la colonne `groupe_suivi` correspond à leur groupe.
+- Un compte `admin` voit toutes les activités et peut changer de groupe
+  librement.
+
+Toutes les instructions sont détaillées dans `docs/ACCESS_CONTROL.md`.
+
 Il est également protégé par Auth0 ; vous devez définir les deux variables
 suivantes pour l'authentification (voir `docs/AUTH0_SETUP.md` pour le
 pas‑à‑pas complet) :

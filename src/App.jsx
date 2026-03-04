@@ -17,7 +17,9 @@ export default function App() {
   const [dataIdx, setDataIdx] = useState(null);
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState("Aucun fichier chargé");
-  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const allowedGroups = user?.['https://flashprod.example/allowed_groups'] || [];
+  const isAdmin = user?.['https://flashprod.example/is_admin'] === true;
 
   const handleToggle = useCallback((key) => {
     setCollapseState((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -77,19 +79,21 @@ const handleAutoLoad = useCallback(async () => {
     console.debug('parsed rows', parsed.length, parsed[0]);
 
     const groups = [...new Set(parsed.map((r) => r.groupe_suivi).filter(Boolean))].sort();
-    const first = groups.length > 0 ? groups[0] : "";
+    // restreindre selon la liste autorisée (sauf admin)
+    const filtered = isAdmin ? groups : groups.filter((g) => allowedGroups.includes(g));
+    const first = filtered.length > 0 ? filtered[0] : "";
 
     setRawData(parsed);
-    setAllGroups(groups);
+    setAllGroups(filtered);
     setSelectedGroup(first);
     setDataIdx(buildIndex(parsed, first));
-    setStatusMsg(`${parsed.length} lignes · ${groups.length} activité(s)`);
+    setStatusMsg(`${parsed.length} lignes · ${filtered.length} activité(s)`);
     setLoading(false);
   } catch (err) {
     console.error("Erreur privée:", err);
     setLoading(false);
   }
-}, []);
+}, [getAccessTokenSilently, allowedGroups, isAdmin]);
 
 // Appeler la fonction au chargement de la page (une fois authentifié)
 useEffect(() => {
@@ -105,7 +109,9 @@ useEffect(() => {
     reader.onload = (ev) => {
       setTimeout(() => {
         const parsed = parseCSV(ev.target.result);
-        const groups = [...new Set(parsed.map((r) => r.groupe_suivi).filter(Boolean))].sort();
+        let groups = [...new Set(parsed.map((r) => r.groupe_suivi).filter(Boolean))].sort();
+        // appliquer même filtrage que pour l'auto load
+        groups = isAdmin ? groups : groups.filter((g) => allowedGroups.includes(g));
         const first = groups.length > 0 ? groups[0] : "";
         setRawData(parsed);
         setAllGroups(groups);

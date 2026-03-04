@@ -25,14 +25,18 @@ export default function TopBar({ dark, onToggleTheme, allGroups, selectedGroup, 
       <span className={`font-bold text-[18px] tracking-tight ${text}`}>Flash Production</span>
       <div className={`w-px h-[22px] ${dark ? "bg-slate-700" : "bg-slate-200"}`} />
       <span className={`text-[12 px] font-medium ${muted}`}>Activité :</span>
-      <select
-        className={`${dark ? "bg-[#21262d] border-[#30363d] text-slate-200" : "bg-slate-100 border-slate-200 text-slate-800"} border rounded-lg px-3 py-1.5 text-[12px] font-medium cursor-pointer outline-none min-w-[150px] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all`}
-        value={selectedGroup}
-        onChange={(e) => onGroupChange(e.target.value)}
-      >
-        <option value="">— Tous —</option>
-        {allGroups.map((g) => <option key={g} value={g}>{g}</option>)}
-      </select>
+      {allGroups.length > 1 ? (
+        <select
+          className={`${dark ? "bg-[#21262d] border-[#30363d] text-slate-200" : "bg-slate-100 border-slate-200 text-slate-800"} border rounded-lg px-3 py-1.5 text-[12px] font-medium cursor-pointer outline-none min-w-[150px] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all`}
+          value={selectedGroup}
+          onChange={(e) => onGroupChange(e.target.value)}
+        >
+          <option value="">— Tous —</option>
+          {allGroups.map((g) => <option key={g} value={g}>{g}</option>)}
+        </select>
+      ) : (
+        <span className={`${muted} ml-2`}>{allGroups[0] || '–'}</span>
+      )}
       <span className={`text-[11px] font-normal ${muted}`}>{statusMsg}</span>
       <div className="ml-auto flex items-center gap-2">
         {isAuthenticated && (

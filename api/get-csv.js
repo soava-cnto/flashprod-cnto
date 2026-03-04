@@ -1,4 +1,5 @@
 import { list } from '@vercel/blob';
+import jwt from 'jsonwebtoken';
 
 // L'API `@vercel/blob` lit automatiquement la variable d'environnement
 // BLOB_READ_WRITE_TOKEN. On vérifie qu'elle est bien définie afin de
@@ -49,6 +50,32 @@ export default async function handler(req, res) {
     }
 
     let csvText = await response.text();
+
+    // filtration basée sur le jeton (user autorisation)
+    let allowedGroups = [];
+    let isAdmin = false;
+    try {
+      const token = auth.split(' ')[1];
+      const decoded = jwt.decode(token) || {};
+      allowedGroups = decoded['https://flashprod.example/allowed_groups'] || [];
+      isAdmin = decoded['https://flashprod.example/is_admin'] === true;
+    } catch (e) {
+      console.warn('Impossible de décoder le JWT :', e.message);
+    }
+
+    if (!isAdmin && allowedGroups.length > 0) {
+      const allLines = csvText.split('\n');
+      const header = allLines[0] || '';
+      const body = allLines.slice(1);
+      const idx = header.split(',').indexOf('groupe_suivi');
+      if (idx !== -1) {
+        const filtered = body.filter((line) => {
+          const parts = line.split(',');
+          return allowedGroups.includes(parts[idx]);
+        });
+        csvText = [header, ...filtered].join('\n');
+      }
+    }
 
     // 3. Normaliser les dates de YYYY-MM-DD vers DD/MM/YYYY
     // pour compatibilité avec l'app qui attend le format français
